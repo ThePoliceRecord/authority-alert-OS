@@ -79,6 +79,15 @@ for subdir in $EXTERNAL/buildroot/package/*; do
     fi
 done
 
+# Add zerotier-one package to Buildroot menu (after dropbear in Networking menu)
+if [ -d "$PROJECT_OUT/$BUILDROOT_DIR/package/zerotier-one" ]; then
+    if ! grep -q "zerotier-one" "$PROJECT_OUT/$BUILDROOT_DIR/package/Config.in"; then
+        sed -i '/source "package\/dropbear\/Config.in"/a\	source "package/zerotier-one/Config.in"' \
+            "$PROJECT_OUT/$BUILDROOT_DIR/package/Config.in"
+        echo "INFO: Added zerotier-one to package/Config.in"
+    fi
+fi
+
 ln -sf $TOPDIR/host-tools $PROJECT_OUT/
 
 if [ ! -e "$PROJECT_OUT/cvi_rtsp/.git" ]; then

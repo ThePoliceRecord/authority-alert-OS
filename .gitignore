@@ -27,6 +27,9 @@
 /release
 output*/
 
+# ccache build cache
+.ccache/
+
 # Certificates
 *.pem
 

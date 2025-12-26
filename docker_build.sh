@@ -39,13 +39,16 @@ HOST_UID=$(id -u)
 HOST_GID=$(id -g)
 HOST_UNAME=${USER:-hostuser}
 DOCKER_HOME_DIR="$PROJECT_ROOT/output/.docker_home"
+CCACHE_DIR="$PROJECT_ROOT/.ccache"
 mkdir -p "$DOCKER_HOME_DIR"
+mkdir -p "$CCACHE_DIR"
 
 docker run --rm -it \
     -e HOST_UID=$HOST_UID -e HOST_GID=$HOST_GID -e HOST_UNAME=$HOST_UNAME \
     -e HOME=/home/$HOST_UNAME \
     -v "$PROJECT_ROOT":/work \
     -v "$DOCKER_HOME_DIR":/home/$HOST_UNAME \
+    -v "$CCACHE_DIR":/work/.ccache \
     --workdir /work \
     "$IMAGE_NAME" \
     bash -c "
@@ -58,8 +61,10 @@ fi
 chown -R $HOST_UID:$HOST_GID /home/$HOST_UNAME || true
 mkdir -p /work/output || true
 chown -R $HOST_UID:$HOST_GID /work/output || true
+mkdir -p /work/.ccache || true
+chown -R $HOST_UID:$HOST_GID /work/.ccache || true
 echo '>>> Using user:'
-id "$HOST_UNAME"
+id \"$HOST_UNAME\"
 
 cat > /tmp/inner_build.sh <<'EOF_INNER'
 #!/bin/bash
