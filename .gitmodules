@@ -88,8 +88,8 @@
 	branch = tpu
 [submodule "buildroot-2021.05"]
 	path = buildroot-2021.05
-	url = https://github.com/sophgo/buildroot-2021.05.git
-	branch = sg200x-dev
+	url = https://github.com/ThePoliceRecord/authority-alert-buildroot-2021.05.git
+	branch = development
 [submodule "tdl_sdk"]
 	path = tdl_sdk
 	url = https://github.com/sophgo/tdl_sdk.git
