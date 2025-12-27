@@ -299,6 +299,9 @@ BR2_PACKAGE_E2FSPROGS_FSCK=y
 # BR2_PACKAGE_E2FSPROGS_FUSE2FS is not set
 BR2_PACKAGE_E2FSPROGS_RESIZE2FS=y
 
+# exFAT filesystem utilities (mkfs.exfat, fsck.exfat, exfatlabel)
+BR2_PACKAGE_EXFATPROGS=y
+
 #
 # eudev needs eudev /dev management
 #
