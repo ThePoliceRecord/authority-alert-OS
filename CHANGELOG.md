@@ -1,3 +1,26 @@
+## 0.2.3 (2025-12-27)
+
+### sg2002_recamera_emmc
+
+- **New Features:**
+    
+    - **Camera Streaming Support**
+      - Added sscma-camera-streamer package for video streaming functionality
+      - Integrated with SSCMA supervisor for camera stream management
+      - Provides real-time video streaming capabilities for remote monitoring
+      - Configuration updates in br2-external packages
+
+- **Configuration Changes:**
+    - Updated [`Config.in`](reCamera-OS/external/br2-external/Config.in) to include camera-streamer package
+    - Modified [`sscma-supervisor.mk`](reCamera-OS/external/br2-external/sscma-supervisor/sscma-supervisor.mk) for camera streaming integration
+    - Added complete [`sscma-camera-streamer`](reCamera-OS/external/br2-external/sscma-camera-streamer/sscma-camera-streamer.mk) package definition
+
+- **Statistics:**
+    - **Total Changes:** 4 files changed
+    - **Additions:** +50 lines
+    - **Deletions:** -1 line
+    - **Net:** +49 lines
+
 ## 0.2.2 (2025-12-27)
 
 ### sg2002_recamera_emmc
