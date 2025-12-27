@@ -14,6 +14,11 @@ RUN if [ "$VARIANT" = "noble" ]; then \
 
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
 
+# Install Go 1.25.5 for supervisor build (supports RISC-V cross-compilation)
+RUN curl -fsSL https://go.dev/dl/go1.25.5.linux-amd64.tar.gz | tar -C /usr/local -xzf - && \
+    ln -sf /usr/local/go/bin/go /usr/local/bin/go && \
+    ln -sf /usr/local/go/bin/gofmt /usr/local/bin/gofmt
+
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && apt-get -y install --no-install-recommends \
     build-essential \
@@ -66,4 +71,6 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     pkg-config \
     xxd \
     zip \
+    dosfstools \
+    fdisk \
  && ln -sf /usr/bin/python3 /usr/local/bin/python || true
