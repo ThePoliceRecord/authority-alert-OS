@@ -2,23 +2,104 @@
 
 ### sg2002_recamera_emmc
 
-- New Features:
-    - **OTA Security:** Migrated integrity verification from MD5 to SHA256
-      - Server-side: Generate `sg2002_recamera_emmc_sha256sum.txt` manifests
-      - Client-side: `upgrade.sh` now uses `sha256sum` exclusively
-      - Build artifacts: OTA zips contain `sha256sum.txt` for enhanced security
-    - **Filesystem:** Full exFAT support enabled
-      - Added mkfs.exfat, fsck.exfat, exfatlabel utilities
-      - Kernel driver already present, now with userspace tools
+- **New Features:**
+    
+    - **OTA Security Enhancement (Breaking Change)**
+      - Migrated from MD5 to SHA256 hash verification
+      - **Server Changes:**
+        - `build.sh`: Generate `sha256sum.txt` instead of `md5sum.txt` in OTA artifacts
+        - `ota_server/prepare_release.sh`: Create `sg2002_recamera_emmc_sha256sum.txt` manifests
+        - `.gitlab-ci.yml`: Package stage generates SHA256 checksums
+      - **Client Changes:**
+        - `upgrade.sh`: Complete rewrite with SHA256-only verification (177 line changes)
+        - Automatic hash algorithm detection for safer upgrades
+        - Removed all MD5 fallback logic
+      - **Security:** SHA256 provides 256-bit cryptographic security vs MD5's broken 128-bit
+    
+    - **Filesystem Support**
+      - Added full exFAT support (`BR2_PACKAGE_EXFATPROGS=y`)
+      - Tools: mkfs.exfat, fsck.exfat, exfatlabel
+      - Enables formatting/checking exFAT on external media
+    
+    - **Build System Overhaul**
+      - **Buildroot Package Updates:**
+        - **Networking:** Added c-ares 1.32.3 (CVE fixes), openssh 9.9p1, dropbear 2024.86
+        - **System:** Added coreutils 9.5, util-linux 2.40.2, expat 2.6.4
+        - **Kernel:** Added kmod 33 with musl/Python 3.13 compatibility
+        - **Security:** Added hostapd 2.11, libgpg-error 1.51, libopenssl 3.3.2
+        - **Python:** Upgraded to Python 3.13.1 with full packaging infrastructure
+          - python-flit-core, python-installer, python-pypa-build
+          - python-pyproject-hooks, python-setuptools, python-wheel
+          - python-pip, python-py, python-packaging
+          - python-bcrypt, python-passlib for authentication
+        - **Gettext:** Added gettext-gnu 0.22.5 / gettext-tiny 0.3.2 with GETTEXTIZE fix
+        - **Build Tools:** Updated autoconf 2.72, automake 1.17
+        - **Busybox:** Updated with kernel 6.8+ support + security patches (CVE-2023-42366)
+        - **WebSockets:** Added libwebsockets 4.3.3
+        - **Networking:** Added zerotier-one 1.14.2 for VPN support
+      
+      - **Downgraded Packages:**
+        - libuv: 1.51.0 → 1.44.2 (fixes pthread_getname_np musl incompatibility)
+      
+      - **Removed Packages:**
+        - Removed nodejs package (cross-compilation issues on musl/RISC-V)
+        - Removed sscma-node (nodejs dependency conflicts)
+      
+      - **Docker Build:**
+        - Enhanced `.devcontainer/Dockerfile` with 7 new lines
+        - Improved `docker_build.sh` script
+        - Added `external/setenv.sh` for environment setup
+      
+      - **Linux Kernel:**
+        - Updated `cvitek_sg2002_recamera_emmc_defconfig` (5 line changes)
+        - Maintained exFAT driver support (CONFIG_EXFAT_FS=y)
 
-- Breaking Changes:
-    - **OTA:** Old clients (MD5-only) cannot update from new servers
-    - Manifest filename changed from `*_md5sum.txt` to `*_sha256sum.txt`
+- **Breaking Changes:**
+    
+    - **OTA Incompatibility**
+      - Devices with firmware < 0.2.2 cannot OTA update from 0.2.2+ servers
+      - Manifest filename changed: `*_md5sum.txt` → `*_sha256sum.txt`
+      - No MD5 backward compatibility - enhanced security priority
+      - **Migration Required:** Manual flash for devices < 0.2.2
+    
+    - **Removed Software**
+      - Node.js and sscma-node no longer included
+      - Applications depending on Node.js must be refactored
 
-- Documentation:
-    - Comprehensive MD5→SHA256 migration plan added
-    - Updated all OTA-related documentation
-    - Updated Nix flake for SHA256 workflow
+- **Configuration Changes:**
+    - **Buildroot defconfig** (`cvitek_CV181X_musl_riscv64_defconfig`): 38 modified lines
+      - Enabled/disabled packages per above lists
+      - Updated package versions and dependencies
+      - Configured new build infrastructure
+
+- **Bug Fixes:**
+    - Fixed musl libc pthread compatibility issues
+    - Fixed Python 3.13 build infrastructure compatibility
+    - Resolved gettext GETTEXTIZE variable conflicts
+    - Applied busybox security patches
+
+- **Documentation:**
+    - Added `spec/MD5_TO_SHA256_MIGRATION_PLAN.md` - comprehensive migration guide
+    - Updated all OTA documentation for SHA256 workflow
+    - Updated README.md, CUSTOMIZATION_AND_OTA.md, OTA_SERVER_DOCKER.md
+    - Added ttyd security hardening guide
+    - Added eFuse decoder utility documentation
+    - Updated `.gitignore` (3 line changes)
+
+- **Testing & Validation:**
+    - Static code analysis confirms complete MD5 removal
+    - Build system validated with musl/RISC-V architecture
+    - CI/CD pipelines tested for SHA256 generation
+    - Docker build improvements verified
+
+- **Statistics:**
+    - **Total Changes:** 168 files changed
+    - **Additions:** +9,930 lines
+    - **Deletions:** -1,142 lines
+    - **Net:** +8,788 lines
+    - **New Packages:** 29 added
+    - **Removed Packages:** 2 deleted
+    - **Updated Packages:** 15 modified
 
 ## 0.2.1 (2025-09-12)
 
