@@ -1,3 +1,25 @@
+## 0.2.2 (2025-12-27)
+
+### sg2002_recamera_emmc
+
+- New Features:
+    - **OTA Security:** Migrated integrity verification from MD5 to SHA256
+      - Server-side: Generate `sg2002_recamera_emmc_sha256sum.txt` manifests
+      - Client-side: `upgrade.sh` now uses `sha256sum` exclusively
+      - Build artifacts: OTA zips contain `sha256sum.txt` for enhanced security
+    - **Filesystem:** Full exFAT support enabled
+      - Added mkfs.exfat, fsck.exfat, exfatlabel utilities
+      - Kernel driver already present, now with userspace tools
+
+- Breaking Changes:
+    - **OTA:** Old clients (MD5-only) cannot update from new servers
+    - Manifest filename changed from `*_md5sum.txt` to `*_sha256sum.txt`
+
+- Documentation:
+    - Comprehensive MD5→SHA256 migration plan added
+    - Updated all OTA-related documentation
+    - Updated Nix flake for SHA256 workflow
+
 ## 0.2.1 (2025-09-12)
 
 ### sg2002_recamera_emmc
