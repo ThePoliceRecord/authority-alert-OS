@@ -3,8 +3,14 @@
 OFFICIAL_URL="https://github.com/Seeed-Studio/reCamera-OS/releases/latest"
 OFFICIAL_URL2="https://files.seeedstudio.com/reCamera"
 
-MD5_FILE=sg2002_recamera_emmc_md5sum.txt
+# Manifest filename - SHA256 only
+SHA256_FILE=sg2002_recamera_emmc_sha256sum.txt
 URL_FILE=url.txt
+
+# Hash algorithm - SHA256 only
+HASH_CMD=""        # Command to use (sha256sum)
+HASH_FILE="$SHA256_FILE"
+HASH_TYPE="sha256"
 
 FIP_PART=/dev/mmcblk0boot0
 BOOT_PART=/dev/mmcblk0p1
@@ -21,12 +27,31 @@ RunCase=""
 ResultFile=""
 MountPath=""
 Step=0
+DD_Calc_Hash=""    # Result from dd_calc_hash()
+
 step_log() {
     let Step++
     echo "Step$Step: $1"
 }
 
 step_result() { echo "Result: $1"; }
+
+# Detect available hash algorithm - SHA256 only
+detect_hash_algorithm() {
+    if command -v sha256sum >/dev/null 2>&1; then
+        HASH_CMD="sha256sum"
+        return 0
+    elif busybox sha256sum --help >/dev/null 2>&1; then
+        HASH_CMD="busybox sha256sum"
+        return 0
+    else
+        echo "ERROR: sha256sum command not available"
+        exit 1
+    fi
+}
+
+# Initialize hash algorithm detection
+detect_hash_algorithm
 
 # exit
 cleanup() {
@@ -76,13 +101,13 @@ ps_stop() {
     exit 0
 }
 
-# utils
-parse_md5() { # sg2002_recamera_emmc_md5sum.txt
+# utils - generic hash parsing
+parse_hash() { # <field> <manifest_file>
     local info=$(grep ".*ota.zip" "$2" 2>/dev/null)
     [ -z "$info" ] && return 1
     case "$1" in
     name) echo "$info" | awk '{print $2}' ;;
-    md5) echo "$info" | awk '{print $1}' ;;
+    hash) echo "$info" | awk '{print $1}' ;;
     os) echo "$info" | awk '{print $2}' | cut -d'_' -f2 ;;
     version) echo "$info" | awk '{print $2}' | cut -d'_' -f3 ;;
     *) return 1 ;;
@@ -95,11 +120,17 @@ zip_get_size() { # zip=$1 file=$2
     echo $((size))
 }
 
-zip_read_md5() { # md5sum.txt
-    zip=$1 file=$2
-    md5=$(unzip -p "$zip" md5sum.txt 2>/dev/null | grep "$file" | awk '{print $1}')
-    [ -z "$md5" ] && return 1
-    echo $md5
+# Read hash from inside zip - SHA256 only
+zip_read_hash() { # zip=$1 file=$2
+    local zip=$1 file=$2 hash=""
+    
+    hash=$(unzip -p "$zip" sha256sum.txt 2>/dev/null | grep "$file" | awk '{print $1}')
+    if [ -n "$hash" ] && [ ${#hash} -eq 64 ]; then
+        echo "$hash"
+        return 0
+    fi
+    
+    return 1
 }
 
 mount_recovery() {
@@ -141,7 +172,9 @@ get_upgrade_url() {
         url=$(curl -skLi "$url" --connect-timeout 30 --max-time 60 | grep -i '^location:' | awk '{print $2}' | sed 's/^"//;s/"$//')
         url=$(echo "$url" | sed 's/tag/download/g')
         [ -z "$url" ] && return 1
-        full_url="$url/$MD5_FILE"
+        
+        # Use SHA256 manifest
+        full_url="$url/$SHA256_FILE"
     }
     echo "$full_url"
 }
@@ -161,68 +194,69 @@ wget_file() {
     [ ! -s "$file" ] && exit_upgrade "download $(basename $file) is empty"
 }
 
+# Generic hash write with verification
 zip_write_part() {
     local zip=$1 part=$2 file=$3
-    local size read_md5 calc_md5
+    local size read_hash calc_hash
     size=$(zip_get_size "$zip" "$file") || exit_upgrade "get size $zip $file"
-    read_md5=$(zip_read_md5 "$zip" "$file") || exit_upgrade "read md5 $zip $file"
-    step_log "Write $part with $file size: $size"
+    read_hash=$(zip_read_hash "$zip" "$file") || exit_upgrade "read hash $zip $file"
+    step_log "Write $part with $file size: $size (using $HASH_TYPE)"
     echo "$size" >"$ResultFile.$file.size"
 
     local tmpfile=$(mktemp)
-    unzip -p "$zip" "$file" 2>/dev/null | tee >(md5sum >"$tmpfile") | dd of="$part" bs=1M status=progress 2>&1 | tee -a "$ResultFile.$file.prog"
+    unzip -p "$zip" "$file" 2>/dev/null | tee >($HASH_CMD >"$tmpfile") | dd of="$part" bs=1M status=progress 2>&1 | tee -a "$ResultFile.$file.prog"
     local ret=$?
-    calc_md5=$(cat $tmpfile | awk '{print $1}')
+    calc_hash=$(cat $tmpfile | awk '{print $1}')
     rm -rf $tmpfile
     [ $ret -ne 0 ] && exit_upgrade "write $part with $file"
 
-    step_log "Check md5sum $part"
-    [ "$calc_md5" = "$read_md5" ] || exit_upgrade "check md5sum $part"
+    step_log "Check $HASH_TYPE $part"
+    [ "$calc_hash" = "$read_hash" ] || exit_upgrade "check $HASH_TYPE $part (expected: $read_hash, got: $calc_hash)"
 }
 
-dd_calc_md5() {
-    DD_Calc_MD5=""
+# Generic hash calculation
+dd_calc_hash() {
+    DD_Calc_Hash=""
     local file=$1 size=$2
     [ -e "$file" ] || exit_upgrade "file $file not exist"
     [ -z "$size" ] && size=$(stat -c %s "$file" 2>/dev/null) || size=$2
     [ $((size)) -eq 0 ] && exit_upgrade "unknown size $file"
     local tmpfile=$(mktemp)
-    dd if="$file" bs=1M status=progress | head -c $size | md5sum >"$tmpfile"
+    dd if="$file" bs=1M status=progress 2>/dev/null | head -c $size | $HASH_CMD >"$tmpfile"
     local ret=$?
-    DD_Calc_MD5=$(cat $tmpfile | awk '{print $1}')
+    DD_Calc_Hash=$(cat $tmpfile | awk '{print $1}')
     rm -f $tmpfile
-    [ $ret -ne 0 ] && exit_upgrade "calc md5sum $file"
+    [ $ret -ne 0 ] && exit_upgrade "calc $HASH_TYPE $file"
 }
 
 ota_boot() { # fip.bin boot.emmc
     local zip=$1 part=$2 file=$3
-    local size read_md5 calc_md5
+    local size read_hash calc_hash
     step_log "Check $part and $file"
     size=$(zip_get_size $zip $file)
-    read_md5=$(zip_read_md5 $zip $file)
-    ([ -z "$size" ] || [ -z "$read_md5" ]) && {
+    read_hash=$(zip_read_hash $zip $file)
+    ([ -z "$size" ] || [ -z "$read_hash" ]) && {
         step_result "skip with no valid $file"
         return 0
     }
 
-    dd_calc_md5 $part $size
-    calc_md5=$DD_Calc_MD5
-    [ "$read_md5" = "$calc_md5" ] && {
-        step_result "skip with md5 matched"
+    dd_calc_hash $part $size
+    calc_hash=$DD_Calc_Hash
+    [ "$read_hash" = "$calc_hash" ] && {
+        step_result "skip with $HASH_TYPE matched"
         return 0
     }
 
-    calc_md5=$(unzip -p $zip $file 2>/dev/null | md5sum | awk '{print $1}')
-    [ "$calc_md5" != "$read_md5" ] && {
+    calc_hash=$(unzip -p $zip $file 2>/dev/null | $HASH_CMD | awk '{print $1}')
+    [ "$calc_hash" != "$read_hash" ] && {
         step_result "skip with $file damaged"
         return 0
     }
 
     [ "$part" = "$FIP_PART" ] && echo 0 >"/sys/block/mmcblk0boot0/force_ro" 2>/dev/null
-    # zip_write_part $zip $part $file
     unzip -p "$zip" "$file" 2>/dev/null | dd of="$part" bs=1M status=progress || exit_upgrade "write $part with $file"
-    calc_md5=$(dd if="$part" bs=1M count=$(( (size + 1048575) / 1048576 )) | head -c $size | md5sum | awk '{print $1}')
-    [ "$calc_md5" != "$read_md5" ] && exit_upgrade "check md5sum $part"
+    calc_hash=$(dd if="$part" bs=1M count=$(( (size + 1048575) / 1048576 )) 2>/dev/null | head -c $size | $HASH_CMD | awk '{print $1}')
+    [ "$calc_hash" != "$read_hash" ] && exit_upgrade "check $HASH_TYPE $part"
     [ "$part" = "$FIP_PART" ] && echo 1 >"/sys/block/mmcblk0boot0/force_ro" 2>/dev/null
 }
 
@@ -246,38 +280,39 @@ latest_cmd() {
 latest() {
     latest_cmd $@
     ps_mutex
-    local url="$2" md5_url=""
+    local url="$2" hash_url=""
     if [ -z "$url" ]; then
         url="$OFFICIAL_URL"
         step_log "Parse $url"
-        md5_url=$(get_upgrade_url "$url")
-        [ -z "$md5_url" ] && {
+        hash_url=$(get_upgrade_url "$url")
+        [ -z "$hash_url" ] && {
             step_result "Failed parse $url"
             url="$OFFICIAL_URL2/latest"
             step_log "Parse $url"
             local ver=$(curl -sk "$url" --connect-timeout 30 --max-time 60)
             [ -z "$ver" ] && exit_upgrade "parse $url"
-            md5_url="$OFFICIAL_URL2/"$ver"/$MD5_FILE"
+            # Use SHA256 manifest for official URL2
+            hash_url="$OFFICIAL_URL2/$ver/$SHA256_FILE"
         }
-        step_result "$md5_url"
+        step_result "$hash_url (using $HASH_TYPE)"
     else
         step_log "Parse $url"
-        local md5_url md5_path
-        md5_url=$(get_upgrade_url "$url") || exit_upgrade "parse $url"
-        step_result "$md5_url"
+        local hash_path
+        hash_url=$(get_upgrade_url "$url") || exit_upgrade "parse $url"
+        step_result "$hash_url (using $HASH_TYPE)"
     fi
 
-    md5_path="$UPGRADE_FILES/$MD5_FILE"
-    rm -f "$md5_path"
-    wget_file "$md5_url" "$md5_path"
+    local hash_path="$UPGRADE_FILES/$HASH_FILE"
+    rm -f "$hash_path"
+    wget_file "$hash_url" "$hash_path"
 
     # RESULT
     local os_name version
-    os_name=$(parse_md5 os "$md5_path") || exit_upgrade "parse os $md5_path"
-    version=$(parse_md5 version "$md5_path") || exit_upgrade "parse version $md5_path"
-    echo "Success: $os_name $version" >$ResultFile
-    echo "$(echo ${md5_url%/*})" >"$UPGRADE_FILES/$URL_FILE"
-    step_result "$os_name@$version"
+    os_name=$(parse_hash os "$hash_path") || exit_upgrade "parse os $hash_path"
+    version=$(parse_hash version "$hash_path") || exit_upgrade "parse version $hash_path"
+    echo "Success: $os_name $version ($HASH_TYPE)" >$ResultFile
+    echo "$(echo ${hash_url%/*})" >"$UPGRADE_FILES/$URL_FILE"
+    step_result "$os_name@$version (integrity: $HASH_TYPE)"
     exit_upgrade
 }
 
@@ -313,38 +348,39 @@ download() {
 
     local tmpdir="$UPGRADE_TMP"
     local url_path_tmp="$tmpdir/$URL_FILE"
-    local md5_path_tmp="$tmpdir/$MD5_FILE"
-    local md5_path_latest="$UPGRADE_FILES/$MD5_FILE"
-
-    step_log "Check files"
-    [ -s $md5_path_latest ] && {
-        local md5_path_now="$MountPath/$MD5_FILE"
-        [ -s "$md5_path_now" ] && {
-            [ -z "$(diff "$md5_path_latest" "$md5_path_now")" ] && {
+    
+    local hash_path_tmp="$tmpdir/$HASH_FILE"
+    local hash_path_latest="$UPGRADE_FILES/$HASH_FILE"
+    
+    step_log "Check files (using $HASH_TYPE)"
+    [ -s $hash_path_latest ] && {
+        local hash_path_now="$MountPath/$HASH_FILE"
+        [ -s "$hash_path_now" ] && {
+            [ -z "$(diff "$hash_path_latest" "$hash_path_now")" ] && {
                 step_result "OTA is up to date."
                 exit_upgrade
             }
         }
-        ([ ! -s "$md5_path_tmp" ] || [ ! -z "$(diff "$md5_path_latest" "$md5_path_tmp")" ]) && {
+        ([ ! -s "$hash_path_tmp" ] || [ ! -z "$(diff "$hash_path_latest" "$hash_path_tmp")" ]) && {
             step_log "Copy latest files"
             rm -rf $tmpdir/*
-            cp -f "$md5_path_latest" "$md5_path_tmp"
+            cp -f "$hash_path_latest" "$hash_path_tmp"
             cp -f "$UPGRADE_FILES/$URL_FILE" "$url_path_tmp"
         }
     }
-    ([ -s "$md5_path_tmp" ] && [ -s "$url_path_tmp" ]) || {
+    ([ -s "$hash_path_tmp" ] && [ -s "$url_path_tmp" ]) || {
         exit_upgrade "no latest files, please run 'upgrade.sh latest [url]' first"
     }
 
-    local filename md5 url
-    filename=$(parse_md5 name "$md5_path_tmp") || exit_upgrade "parse name $md5_path_tmp"
-    md5=$(parse_md5 md5 "$md5_path_tmp") || exit_upgrade "parse md5 $md5_path_tmp"
+    local filename hash url
+    filename=$(parse_hash name "$hash_path_tmp") || exit_upgrade "parse name $hash_path_tmp"
+    hash=$(parse_hash hash "$hash_path_tmp") || exit_upgrade "parse hash $hash_path_tmp"
     url=$(cat "$url_path_tmp")/$filename
     wget_file "$url" "$tmpdir/$filename"
 
-    step_log "Check md5sum $filename"
-    dd_calc_md5 "$tmpdir/$filename"
-    [ "$md5" != "$DD_Calc_MD5" ] && exit_upgrade "md5 mismatch"
+    step_log "Check $HASH_TYPE $filename"
+    dd_calc_hash "$tmpdir/$filename"
+    [ "$hash" != "$DD_Calc_Hash" ] && exit_upgrade "$HASH_TYPE mismatch (expected: $hash, got: $DD_Calc_Hash)"
 
     step_log "Sync files"
     rm -rf $MountPath/*
@@ -383,11 +419,14 @@ start() {
     local zip="$2"
     step_log "Check ota pack $zip"
     [ -z "$zip" ] && {
-        file="$(parse_md5 name "$MountPath/$MD5_FILE")" || exit_upgrade "parse name $MountPath/$MD5_FILE"
+        local manifest_file="$MountPath/$SHA256_FILE"
+        [ -f "$manifest_file" ] || exit_upgrade "no manifest file found in $MountPath"
+        
+        file="$(parse_hash name "$manifest_file")" || exit_upgrade "parse name $manifest_file"
         zip="$MountPath/$file"
     }
     [ -e "$zip" ] || { exit_upgrade "not found $zip"; }
-    step_result "OTA will use $zip"
+    step_result "OTA will use $zip (integrity: $HASH_TYPE)"
 
     ota_boot "$zip" "$FIP_PART" "fip.bin"
     ota_boot "$zip" "$BOOT_PART" "boot.emmc"

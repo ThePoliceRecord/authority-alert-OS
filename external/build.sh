@@ -21,7 +21,7 @@ defconfig ${TARGET} || exit 1
 # copy project rootfs to buildroot overlay
 rsync -av $PROJECT_DIR/rootfs/ $BR_OVERLAY_DIR
 
-md5file=${TARGET}_md5sum.txt
+sha256file=${TARGET}_sha256sum.txt
 ISSUE_FILE=$PROJECT_DIR/rootfs/etc/issue
 if [ -f $ISSUE_FILE ]; then
     issue=$(cat $ISSUE_FILE)
@@ -72,8 +72,9 @@ function gen_rawimages_zip() {
     pushd $OUTPUT_DIR/rawimages
     rm -rfv ../*rawimages.zip
     cp -fv ../fip.bin . || exit 1
-    md5sum fip.bin boot.emmc rootfs_ext4.emmc >md5sum.txt
-    zip -j rawimages.zip fip.bin boot.emmc rootfs_ext4.emmc md5sum.txt || exit 1
+    # Generate SHA256 checksums
+    sha256sum fip.bin boot.emmc rootfs_ext4.emmc > sha256sum.txt
+    zip -j rawimages.zip fip.bin boot.emmc rootfs_ext4.emmc sha256sum.txt || exit 1
     rm -rf fip.bin
     mv -fv rawimages.zip ../${1}.zip
     popd
@@ -125,23 +126,23 @@ function gen_swu() {
 function check_zip() {
     file=$1
     if [ -f ${file} ]; then
-        md5sum ${file} >>${2}
+        sha256sum ${file} >>${2}
     else
         echo "Gen ${file} failed!"
         exit 1
     fi
 }
 
-function gen_md5sum() {
+function gen_sha256sum() {
     echo "Run ${FUNCNAME[0]}"
 
     pushd $OUTPUT_DIR/ >/dev/null 2>&1
-    rm -rf $md5file
+    rm -rf $sha256file
 
     LIST=$(find . -maxdepth 1 -name "${target_name}*.zip")
     while IFS= read -r file; do
         file=$(basename $file)
-        check_zip $file $md5file
+        check_zip $file $sha256file
     done <<<"$LIST"
 
     echo "Success"
@@ -205,4 +206,4 @@ else
 fi
 
 gen_sdk ${target_name}_sdk || exit 1
-gen_md5sum || exit 1
+gen_sha256sum || exit 1

@@ -4,23 +4,39 @@
 #
 ################################################################################
 
-SSCMA_SUPERVISOR_VERSION = 0.2.1
-SSCMA_SUPERVISOR_SITE = https://github.com/Seeed-Studio/sscma-example-sg200x
+SSCMA_SUPERVISOR_VERSION = development
+SSCMA_SUPERVISOR_SITE = https://github.com/ThePoliceRecord/sscma-example-sg200x
 SSCMA_SUPERVISOR_SITE_METHOD = git
 SSCMA_SUPERVISOR_GIT_SUBMODULES = YES
 SSCMA_SUPERVISOR_LICENSE = Apache-2.0
-SSCMA_SUPERVISOR_DEPENDENCIES = libhv
 
-# Configure step: prepare the build environment and run CMake to configure the build
+# Note: We use the host system's Go and npm/node, not Buildroot's host packages,
+# because Buildroot 2021.05's host-go doesn't support RISC-V cross-compilation.
+# Ensure go (>= 1.21) and npm are available in your build environment PATH.
+
+# Configure step: download Go modules
 define SSCMA_SUPERVISOR_CONFIGURE_CMDS
-	mkdir -p $(@D)/solutions/supervisor/build && \
-	cd $(@D)/solutions/supervisor/build && \
-	$(BR2_CMAKE) -DSG200X_SDK_PATH=$(shell realpath $(BUILD_DIR)/../../../../) -DWEB=ON -DSYSROOT=${STAGING_DIR} -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$(TARGET_DIR) ..
+	cd $(@D)/solutions/supervisor && \
+		go mod download
 endef
 
-# Build step: compile the package using the Makefile in the build directory
+# Build step: compile Go binary for RISC-V and build web frontend
 define SSCMA_SUPERVISOR_BUILD_CMDS
-    $(MAKE) -C $(@D)/solutions/supervisor/build
+	# Build web frontend
+	cd $(@D)/solutions/supervisor/www && \
+		npm install && \
+		npm run build && \
+		mkdir -p $(@D)/solutions/supervisor/rootfs/usr/share/supervisor/www && \
+		cp -r $(@D)/solutions/supervisor/www/dist/* $(@D)/solutions/supervisor/rootfs/usr/share/supervisor/www/
+
+	# Build Go binary for RISC-V
+	cd $(@D)/solutions/supervisor && \
+		mkdir -p build && \
+		GOOS=linux GOARCH=riscv64 CGO_ENABLED=0 \
+		go build \
+		-ldflags "-s -w" \
+		-o $(@D)/solutions/supervisor/build/supervisor \
+		./cmd/supervisor
 endef
 
 # Install step: copy the built files to the target directory
@@ -30,7 +46,6 @@ define SSCMA_SUPERVISOR_INSTALL_TARGET_CMDS
 
 	# Copy other files from the source directory to the target directory
 	cp -r $(@D)/solutions/supervisor/rootfs/* $(TARGET_DIR)/
-
 endef
 
 $(eval $(generic-package))
