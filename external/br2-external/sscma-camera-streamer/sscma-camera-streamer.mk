@@ -31,7 +31,7 @@ endef
 define SSCMA_CAMERA_STREAMER_INSTALL_TARGET_CMDS
 	# Install the executable file
 	$(INSTALL) -D -m 0755 $(@D)/solutions/camera-streamer/build/camera-streamer \
-		$(TARGET_DIR)/usr/bin/camera-streamer
+		$(TARGET_DIR)/usr/local/bin/camera-streamer
 	
 	# Copy rootfs files if they exist
 	if [ -d $(@D)/solutions/camera-streamer/rootfs ]; then \
