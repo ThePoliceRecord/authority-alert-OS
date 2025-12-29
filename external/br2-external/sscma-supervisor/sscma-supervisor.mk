@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-SSCMA_SUPERVISOR_VERSION = video-streamer
+SSCMA_SUPERVISOR_VERSION = development
 SSCMA_SUPERVISOR_SITE = https://github.com/ThePoliceRecord/sscma-example-sg200x
 SSCMA_SUPERVISOR_SITE_METHOD = git
 SSCMA_SUPERVISOR_GIT_SUBMODULES = YES
