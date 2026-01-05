@@ -1,7 +1,6 @@
 #!/bin/bash
 
-OFFICIAL_URL="https://github.com/Seeed-Studio/reCamera-OS/releases/latest"
-OFFICIAL_URL2="https://files.seeedstudio.com/reCamera"
+OFFICIAL_URL="https://github.com/ThePoliceRecord/authority-alert-OS/releases/latest"
 
 # Manifest filename - SHA256 only
 SHA256_FILE=sg2002_recamera_emmc_sha256sum.txt
@@ -284,16 +283,7 @@ latest() {
     if [ -z "$url" ]; then
         url="$OFFICIAL_URL"
         step_log "Parse $url"
-        hash_url=$(get_upgrade_url "$url")
-        [ -z "$hash_url" ] && {
-            step_result "Failed parse $url"
-            url="$OFFICIAL_URL2/latest"
-            step_log "Parse $url"
-            local ver=$(curl -sk "$url" --connect-timeout 30 --max-time 60)
-            [ -z "$ver" ] && exit_upgrade "parse $url"
-            # Use SHA256 manifest for official URL2
-            hash_url="$OFFICIAL_URL2/$ver/$SHA256_FILE"
-        }
+        hash_url=$(get_upgrade_url "$url") || exit_upgrade "parse $url"
         step_result "$hash_url (using $HASH_TYPE)"
     else
         step_log "Parse $url"

@@ -1,9 +1,8 @@
 #!/bin/bash
 
-URL_DEFAULT="https://github.com/Seeed-Studio/reCamera-OS/releases/latest"
-URL_BAKEUP1=""
+URL_DEFAULT="https://github.com/ThePoliceRecord/authority-alert-OS/releases/latest"
 
-URL_LIST=("$URL_DEFAULT" "$URL_BAKEUP1")
+URL_LIST=("$URL_DEFAULT")
 
 UPGRADE="/mnt/system/upgrade.sh"
 function get_latest() {
