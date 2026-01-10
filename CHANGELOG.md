@@ -1,3 +1,78 @@
+## 0.2.5 (2026-01-10)
+
+### sg2002_recamera_emmc
+
+- **New Features:**
+    
+    - **Out-of-Box Experience (OOBE) Wizard**
+      - Added new `oobe` Buildroot external package for first-time device setup
+      - Includes backend + web assets packaging via Buildroot
+      - Integrated into Buildroot external package menu
+      - Files: [`oobe/Config.in`](reCamera-OS/external/br2-external/oobe/Config.in), [`oobe.mk`](reCamera-OS/external/br2-external/oobe/oobe.mk), [`br2-external/Config.in`](reCamera-OS/external/br2-external/Config.in)
+
+- **Configuration Changes:**
+    - Enabled CA certificates bundle in Buildroot for TLS trust store support
+      - Updated [`cvitek_CV181X_musl_riscv64_defconfig`](reCamera-OS/external/buildroot/configs/cvitek_CV181X_musl_riscv64_defconfig)
+
+- **Statistics:**
+    - **Total Changes:** 4 files changed
+    - **Additions:** +55 lines
+    - **Deletions:** -1 line
+    - **Net:** +54 lines
+
+## 0.2.4 (2026-01-07)
+
+### sg2002_recamera_emmc
+
+- **New Features:**
+    
+    - **Camera Recording Support**
+      - Added `sscma-camera-recorder` Buildroot external package
+      - Provides H.264 video recording to MP4 for later playback
+      - Files: [`sscma-camera-recorder/Config.in`](reCamera-OS/external/br2-external/sscma-camera-recorder/Config.in), [`sscma-camera-recorder.mk`](reCamera-OS/external/br2-external/sscma-camera-recorder/sscma-camera-recorder.mk)
+
+    - **Nix Flake Build Environment**
+      - Added Nix flake for reproducible builds and a development shell
+      - Files: [`flake.nix`](reCamera-OS/flake.nix), [`flake.lock`](reCamera-OS/flake.lock)
+
+    - **Filesystem Support**
+      - Enabled kernel exFAT filesystem support (`CONFIG_EXFAT_FS=y`)
+      - Updated [`cvitek_sg2002_recamera_emmc_defconfig`](reCamera-OS/external/build/boards/cv181x/sg2002_recamera_emmc/linux/cvitek_sg2002_recamera_emmc_defconfig)
+
+- **Bug Fixes:**
+    
+    - **WiFi Stability Improvements**
+      - Updated default `wpa_supplicant` configuration to reduce disconnects
+      - Updated [`wpa_supplicant.conf`](reCamera-OS/external/buildroot/board/cvitek/CV181X/overlay/etc/wpa_supplicant.conf)
+
+- **Configuration Changes:**
+    - Updated SD hotplug automount behavior and mountpoint to `/mnt/sd`
+      - Updated [`automount.sh`](reCamera-OS/external/buildroot/board/cvitek/CV181X/overlay/etc/hotplug/automount.sh)
+    - Updated OTA download/upgrade URLs to `ThePoliceRecord/authority-alert-OS` releases and removed fallback URL list
+      - Updated [`auto_download.sh`](reCamera-OS/external/ramdisk/rootfs/overlay/cv181x_musl_riscv64/system/auto_download.sh) and [`upgrade.sh`](reCamera-OS/external/ramdisk/rootfs/overlay/cv181x_musl_riscv64/system/upgrade.sh)
+    - Updated package selection/behavior for streaming + supervisor components
+      - Install path change: `camera-streamer` now installs to `/usr/local/bin`
+      - Supervisor version set to `development`
+      - Updated [`sscma-camera-streamer.mk`](reCamera-OS/external/br2-external/sscma-camera-streamer/sscma-camera-streamer.mk) and [`sscma-supervisor.mk`](reCamera-OS/external/br2-external/sscma-supervisor/sscma-supervisor.mk)
+    - Documentation updated for new repository URLs
+      - Updated [`README.md`](reCamera-OS/README.md)
+
+- **Breaking Changes:**
+    
+    - **camera-streamer install path change**
+      - Path changed from `/usr/bin/camera-streamer` to `/usr/local/bin/camera-streamer`
+      - Any scripts/services with hardcoded paths must be updated
+
+    - **SD mountpoint behavior change**
+      - SD mountpoint moved from `/tmp/sd` to `/mnt/sd`
+      - Any scripts relying on the old mountpoint or symlink behavior must be updated
+
+- **Statistics:**
+    - **Total Changes:** 12 files changed
+    - **Additions:** +318 lines
+    - **Deletions:** -30 lines
+    - **Net:** +288 lines
+
 ## 0.2.3 (2025-12-27)
 
 ### sg2002_recamera_emmc
