@@ -1,0 +1,8 @@
+config BR2_PACKAGE_OOBE
+    bool "oobe"
+    default y
+    help
+      Out-of-Box Experience (OOBE) wizard for Authority Alert.
+      Provides first-time setup interface for network configuration,
+      privacy consent, security settings, and system initialization.
+      Includes web-based interface and backend API for configuration.
