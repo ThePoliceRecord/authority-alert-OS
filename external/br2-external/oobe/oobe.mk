@@ -1,6 +1,6 @@
 ################################################################################
 #
-# oobe (Out-of-Box Experience)
+# oobe
 #
 ################################################################################
 
@@ -10,35 +10,37 @@ OOBE_SITE_METHOD = git
 OOBE_GIT_SUBMODULES = YES
 OOBE_LICENSE = Apache-2.0
 
-# Build step: compile the package using the Makefile
-define OOBE_BUILD_CMDS
-	$(MAKE) -C $(@D)/solutions/oobe \
-		CC="$(TARGET_CC)" \
-		CXX="$(TARGET_CXX)" \
-		CFLAGS="$(TARGET_CFLAGS) -I$(@D)/components/sophgo/video/include -I$(STAGING_DIR)/usr/include" \
-		CXXFLAGS="$(TARGET_CXXFLAGS) -I$(@D)/components/sophgo/video/include -I$(STAGING_DIR)/usr/include" \
-		LDFLAGS="$(TARGET_LDFLAGS) -L$(STAGING_DIR)/usr/lib" \
-		VIDEO_DIR="$(@D)/components/sophgo/video" \
-		BUILD_DIR="build"
+# Note: We use the host system's CMake and toolchain, not Buildroot's host packages.
+# The oobe solution uses CMake with a custom RISC-V toolchain.
+# Ensure cmake and the RISC-V toolchain are available in your build environment PATH.
+
+# Configure step: run CMake configuration
+define OOBE_CONFIGURE_CMDS
+	mkdir -p $(@D)/solutions/oobe/build && \
+	cd $(@D)/solutions/oobe/build && \
+		cmake -S $(@D)/solutions/oobe \
+		      -B $(@D)/solutions/oobe/build \
+		      -DCMAKE_BUILD_TYPE=Release
 endef
 
-# Install step: copy the built binary and rootfs files to the target directory
+# Build step: compile the C++ binary for RISC-V
+define OOBE_BUILD_CMDS
+	cd $(@D)/solutions/oobe/build && \
+		cmake --build . -j
+endef
+
+# Install step: copy the built files to the target directory
 define OOBE_INSTALL_TARGET_CMDS
-	# Install the executable file if it exists
-	if [ -f $(@D)/solutions/oobe/build/oobe ]; then \
-		$(INSTALL) -D -m 0755 $(@D)/solutions/oobe/build/oobe \
-			$(TARGET_DIR)/usr/local/bin/oobe; \
-	fi
-	
-	# Copy rootfs files if they exist
-	if [ -d $(@D)/solutions/oobe/rootfs ]; then \
+	# Install the executable file
+	$(INSTALL) -D -m 0755 $(@D)/solutions/oobe/build/oobe $(TARGET_DIR)/usr/local/bin/oobe
+
+	# Install web assets
+	mkdir -p $(TARGET_DIR)/usr/share/oobe/www
+	cp -r $(@D)/solutions/oobe/web/* $(TARGET_DIR)/usr/share/oobe/www/
+
+	# Copy rootfs files (init scripts, config files, etc.)
+	if [ -d "$(@D)/solutions/oobe/rootfs" ]; then \
 		cp -r $(@D)/solutions/oobe/rootfs/* $(TARGET_DIR)/; \
-	fi
-	
-	# Copy web assets if they exist
-	if [ -d $(@D)/solutions/oobe/web ]; then \
-		mkdir -p $(TARGET_DIR)/usr/share/oobe/www; \
-		cp -r $(@D)/solutions/oobe/web/* $(TARGET_DIR)/usr/share/oobe/www/; \
 	fi
 endef
 
