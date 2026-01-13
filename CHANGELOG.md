@@ -1,3 +1,39 @@
+## 0.2.6 (2026-01-12)
+
+### sg2002_recamera_emmc
+
+- **New Features:**
+    
+    - **Per-device hostname + local discovery (mDNS/Bonjour)**
+      - Added init script to set hostname early based on saved device name or MAC suffix (`authorityalert-<ddeeef>`)
+      - Avahi now uses the system hostname (no hardcoded `host-name`) to avoid collisions across devices
+      - Advertises local web UI ports over mDNS (HTTP/80 and HTTPS/443)
+      - Files: [`S06device-identity`](reCamera-OS/external/buildroot/board/cvitek/CV181X/overlay/etc/init.d/S06device-identity), [`avahi-daemon.conf`](reCamera-OS/external/buildroot/board/cvitek/CV181X/overlay/etc/avahi/avahi-daemon.conf), [`authorityalert-web.service`](reCamera-OS/external/buildroot/board/cvitek/CV181X/overlay/etc/avahi/services/authorityalert-web.service)
+
+- **Configuration Changes:**
+
+    - **AP / captive-portal friendliness**
+      - Added DHCP option 114 (RFC 8910) to dnsmasq configs to hint captive portal URL
+      - Updated default AP SSID from `AUOK` to `AuthorityAlert`
+      - Files: [`default.conf`](reCamera-OS/external/buildroot/board/cvitek/CV181X/overlay/etc/dnsmasq/default.conf), [`usb_wlan1.conf`](reCamera-OS/external/buildroot/board/cvitek/CV181X/overlay/etc/dnsmasq/usb_wlan1.conf), [`hostapd_2g4.conf`](reCamera-OS/external/buildroot/board/cvitek/CV181X/overlay/etc/hostapd_2g4.conf), [`hostapd_5g.conf`](reCamera-OS/external/buildroot/board/cvitek/CV181X/overlay/etc/hostapd_5g.conf)
+
+    - **OOBE Buildroot package updates**
+      - OOBE now builds via explicit CMake configure/build steps
+      - Always installs the OOBE binary to `/usr/local/bin/oobe` and web assets to `/usr/share/oobe/www`
+      - Added Buildroot dependency on `libhv`
+      - Files: [`oobe.mk`](reCamera-OS/external/br2-external/oobe/oobe.mk), [`oobe/Config.in`](reCamera-OS/external/br2-external/oobe/Config.in)
+
+    - **Branding defaults**
+      - Updated default Buildroot hostname: `reCamera` → `authorityalert`
+      - Updated `/etc/issue` banner to `AuthorityOS`
+      - Files: [`cvitek_CV181X_musl_riscv64_defconfig`](reCamera-OS/external/buildroot/configs/cvitek_CV181X_musl_riscv64_defconfig), [`issue`](reCamera-OS/external/build/boards/cv181x/sg2002_recamera_emmc/rootfs/etc/issue)
+
+- **Statistics:**
+    - **Total Changes:** 11 files changed
+    - **Additions:** +140 lines
+    - **Deletions:** -36 lines
+    - **Net:** +104 lines
+
 ## 0.2.5 (2026-01-10)
 
 ### sg2002_recamera_emmc
