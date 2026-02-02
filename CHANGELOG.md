@@ -1,3 +1,63 @@
+## 0.2.7 (2026-02-02)
+
+### sscma-example-sg200x
+
+- **New Features:**
+
+    - **Remote Video Streaming (Relay Integration)**
+      - Added relay forwarder system enabling remote video streaming through Authority Alert platform
+      - Camera can now forward H.264 streams to relay server for remote viewing
+      - Supports WebSocket-based streaming with automatic reconnection
+      - Files: [`relay_control.go`](sscma-example-sg200x/solutions/supervisor/internal/handler/relay_control.go), [`relay_discovery.go`](sscma-example-sg200x/solutions/supervisor/internal/handler/relay_discovery.go), [`external_relay.go`](sscma-example-sg200x/solutions/supervisor/internal/handler/external_relay.go), [`forwarder_manager.go`](sscma-example-sg200x/solutions/supervisor/internal/handler/forwarder_manager.go), [`RELAY_INTEGRATION.md`](sscma-example-sg200x/solutions/camera-streamer/RELAY_INTEGRATION.md)
+
+    - **Simplified Device Registration (Claim Code)**
+      - Replaced OAuth flow with simple 6-character claim code registration
+      - Users now enter a code displayed on device into the web dashboard
+      - Added network resilience with automatic retry on connectivity issues
+      - Internet status checking endpoint (`/api/device/internet-status`)
+      - Files: [`device.go`](sscma-example-sg200x/solutions/supervisor/internal/handler/device.go), [`oobe-app.js`](sscma-example-sg200x/solutions/oobe/web/js/oobe-app.js)
+
+    - **Platform TLS Support**
+      - Added platform CA certificate handling for secure communication
+      - Files: [`platform_ca.go`](sscma-example-sg200x/solutions/supervisor/internal/tls/platform_ca.go)
+
+    - **API Documentation**
+      - Added comprehensive OpenAPI 3.0.3 specification for Supervisor API
+      - Documents all endpoints: authentication, device management, network, file operations, camera streaming, system administration
+      - Files: [`supervisor-api-spec.yaml`](sscma-example-sg200x/solutions/supervisor/supervisor-api-spec.yaml)
+
+    - **Security Scanning**
+      - Added Codacy security scan GitHub workflow for automated code analysis
+      - Files: [`.github/workflows/codacy.yml`](sscma-example-sg200x/.github/workflows/codacy.yml)
+
+- **Configuration Changes:**
+
+    - **QR Code Reader Packaging**
+      - Updated build system with improved Makefile
+      - Added opkg package control file for distribution
+      - Files: [`Makefile`](sscma-example-sg200x/solutions/sscma-qrcode-reader/Makefile), [`opkg/CONTROL/control`](sscma-example-sg200x/solutions/sscma-qrcode-reader/opkg/CONTROL/control)
+
+    - **Supervisor Web UI Updates**
+      - Updated security views and hooks for improved user management
+      - Files: [`hook.ts`](sscma-example-sg200x/solutions/supervisor/www/src/views/security/hook.ts), [`index.tsx`](sscma-example-sg200x/solutions/supervisor/www/src/views/security/index.tsx)
+
+    - **API URL Configuration**
+      - Updated platform API URL configuration
+      - Files: [`config.go`](sscma-example-sg200x/solutions/supervisor/internal/config/config.go)
+
+- **Breaking Changes:**
+
+    - **Registration Flow Changed**
+      - OAuth-based registration removed in favor of claim code system
+      - OOBE wizard now generates a code for users to enter on web dashboard
+      - Existing OAuth callback endpoints removed
+
+- **Statistics:**
+    - **Total Changes:** 33 files changed
+    - **Additions:** +7,159 lines
+    - **Deletions:** -945 lines
+    - **Net:** +6,214 lines
+
 ## 0.2.6 (2026-01-12)
 
 ### sg2002_recamera_emmc
