@@ -9,6 +9,7 @@ SSCMA_CAMERA_STREAMER_SITE = https://github.com/ThePoliceRecord/sscma-example-sg
 SSCMA_CAMERA_STREAMER_SITE_METHOD = git
 SSCMA_CAMERA_STREAMER_GIT_SUBMODULES = YES
 SSCMA_CAMERA_STREAMER_LICENSE = Apache-2.0
+SSCMA_CAMERA_STREAMER_DEPENDENCIES = openssl
 
 # Configure step: prepare the build environment and run CMake to configure the build
 define SSCMA_CAMERA_STREAMER_CONFIGURE_CMDS
