@@ -1,3 +1,99 @@
+## 0.2.8 (2026-02-16)
+
+### sscma-example-sg200x
+
+- **New Features:**
+
+    - **ML Detection Pipeline**
+      - Added new `camera-detector` solution with ML-based object detection
+      - Shared memory IPC for efficient video frame sharing between processes (`video_raw_shm`)
+      - Detection queue with automatic platform upload
+      - CameraDB component for local detection storage and management
+      - WebSocket-based detection client for real-time results
+      - Files: [`camera-detector/`](sscma-example-sg200x/solutions/camera-detector/), [`cameradb/`](sscma-example-sg200x/components/cameradb/), [`detectionqueue/`](sscma-example-sg200x/solutions/supervisor/internal/detectionqueue/), [`detection.go`](sscma-example-sg200x/solutions/supervisor/internal/handler/detection.go), [`detection_ws.go`](sscma-example-sg200x/solutions/supervisor/internal/handler/detection_ws.go)
+
+    - **Detections Web UI**
+      - New detections view in Supervisor web interface for viewing detection history
+      - API endpoints for detection data retrieval
+      - Files: [`views/detections/index.tsx`](sscma-example-sg200x/solutions/supervisor/www/src/views/detections/index.tsx), [`api/detection/index.ts`](sscma-example-sg200x/solutions/supervisor/www/src/api/detection/index.ts)
+
+    - **NTP Time Synchronization**
+      - Added NTP client for automatic time synchronization
+      - Files: [`ntp/ntp.go`](sscma-example-sg200x/solutions/supervisor/internal/ntp/ntp.go)
+
+    - **Auto Updates**
+      - Automatic firmware update checking and installation
+      - Improved update UI in Supervisor web interface
+      - Files: [`views/updates/index.tsx`](sscma-example-sg200x/solutions/supervisor/www/src/views/updates/index.tsx), [`upgrade/upgrade.go`](sscma-example-sg200x/solutions/supervisor/internal/upgrade/upgrade.go)
+
+    - **Model Update System**
+      - OTA model update functionality for ML models
+      - Files: [`modelupdate/modelupdate.go`](sscma-example-sg200x/solutions/supervisor/internal/modelupdate/modelupdate.go), [`model_update.go`](sscma-example-sg200x/solutions/supervisor/internal/handler/model_update.go)
+
+    - **Upgrade Signing & Verification**
+      - Added cryptographic signing for firmware upgrades
+      - FreeTSA timestamp authority integration
+      - Files: [`upgrade/signing.go`](sscma-example-sg200x/solutions/supervisor/internal/upgrade/signing.go), [`timestamp/`](sscma-example-sg200x/solutions/supervisor/internal/timestamp/)
+
+    - **Security Configuration**
+      - Added security configuration management
+      - Updated security views with improved user management
+      - Files: [`security/config.go`](sscma-example-sg200x/solutions/supervisor/internal/security/config.go), [`views/security/`](sscma-example-sg200x/solutions/supervisor/www/src/views/security/)
+
+    - **Storage Management**
+      - Storage handler for device storage operations
+      - Files: [`handler/storage.go`](sscma-example-sg200x/solutions/supervisor/internal/handler/storage.go)
+
+    - **Network Utilities**
+      - Added system network utilities
+      - Files: [`system/network.go`](sscma-example-sg200x/solutions/supervisor/internal/system/network.go)
+
+- **Configuration Changes:**
+
+    - **Camera Streamer Updates**
+      - Significant updates to camera streaming main application
+      - Files: [`camera-streamer/main/main.cpp`](sscma-example-sg200x/solutions/camera-streamer/main/main.cpp)
+
+    - **Camera Recorder Updates**
+      - Updates to camera recording functionality
+      - Files: [`camera-recorder/main.cpp`](sscma-example-sg200x/solutions/camera-recorder/main.cpp)
+
+    - **OOBE Improvements**
+      - Updated OOBE wizard with improved camera registration flow
+      - UI/UX improvements to setup process
+      - Files: [`oobe/web/`](sscma-example-sg200x/solutions/oobe/web/)
+
+    - **API URL Updates**
+      - Updated platform API URL configuration
+      - Files: [`config/config.go`](sscma-example-sg200x/solutions/supervisor/internal/config/config.go)
+
+    - **WiFi Handler Updates**
+      - Improved WiFi management
+      - Files: [`handler/wifi.go`](sscma-example-sg200x/solutions/supervisor/internal/handler/wifi.go)
+
+- **Bug Fixes:**
+    - Various stability fixes
+    - WiFi connectivity improvements
+    - Error handling improvements
+
+- **Statistics:**
+    - **Total Changes:** 77 files changed
+    - **Additions:** +15,837 lines
+    - **Deletions:** -1,030 lines
+    - **Net:** +14,807 lines
+
+### reCamera-OS
+
+- **Maintenance:**
+    - Code cleanup and optimization
+    - Files: Various cleanup across 8 files
+
+- **Statistics:**
+    - **Total Changes:** 8 files changed
+    - **Additions:** +59 lines
+    - **Deletions:** -594 lines
+    - **Net:** -535 lines
+
 ## 0.2.7 (2026-02-02)
 
 ### sscma-example-sg200x
